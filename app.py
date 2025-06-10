@@ -24,6 +24,9 @@ try:
     # Assign names to all three columns
     df.columns = ["Category", "Question", "Answer"]
     
+    # FIX: Ensure all data in 'Category' column is treated as a string to prevent sorting errors
+    df['Category'] = df['Category'].astype(str)
+    
     # Clean the data by stripping whitespace
     df['Category'] = df['Category'].str.strip()
     df['Question'] = df['Question'].str.strip()
