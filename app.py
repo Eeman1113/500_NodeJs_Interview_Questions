@@ -18,11 +18,11 @@ Use the sidebar to filter by category or the search bar to find specific questio
 
 # --- Main Application Logic ---
 try:
-    # Load the data from the local CSV file, assuming no header
-    df = pd.read_csv('./index.csv', header=None)
+    # Load the data from the local CSV file, using the first row as the header
+    df = pd.read_csv('./index.csv', header=0)
     
     # --- Data Cleaning and Preparation ---
-    # Assign names to all three columns
+    # Assign names to all three columns to ensure consistency
     df.columns = ["Category", "Question", "Answer"]
     
     # FIX: Forward-fill the category to associate it with all questions in a group.
@@ -30,7 +30,7 @@ try:
     df['Category'].replace('', np.nan, inplace=True)
     df['Category'].ffill(inplace=True)
 
-    # Ensure all data in 'Category' column is treated as a string to prevent sorting errors
+    # Ensure all data in 'Category' column is treated as a string
     df['Category'] = df['Category'].astype(str)
     
     # Clean the data by stripping whitespace
@@ -46,15 +46,17 @@ try:
     df['Question_Num'] = pd.to_numeric(df['Question'].str.split('.').str[0], errors='coerce')
     
     # --- Sidebar Filters ---
-    st.sidebar.header("Filter Options")
+    st.sidebar.header("Category")
 
     # Filter by Category using radio buttons
-    categories = sorted(df['Category'].unique())
+    # FIX: Use .unique() to preserve the original order from the file, preventing incorrect alphabetical sorting
+    categories = df['Category'].unique().tolist()
     category_options = ["All Categories"] + categories
     
     selected_category = st.sidebar.radio(
         'Filter by Category:',
         options=category_options,
+        label_visibility="collapsed" # Hides the 'Filter by Category:' label for a cleaner look
     )
 
     # Filter the dataframe based on the selected category
