@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -12,8 +11,8 @@ st.set_page_config(
 # --- Title and Description ---
 st.title("Node.js Interview Questions Explorer")
 st.markdown("""
-Welcome to the interactive explorer for Node.js interview questions. 
-This app helps you browse, search, and visualize questions from the `index.csv` dataset.
+Welcome to the interactive explorer for all 500 Node.js interview questions. 
+Use the search bar below to filter questions and answers.
 """)
 
 # --- Main Application Logic ---
@@ -31,66 +30,42 @@ try:
     df.dropna(subset=["Category", "Question"], inplace=True)
     df["Answer"] = df["Answer"].fillna("No answer provided.")
 
-    # --- Sidebar Filters ---
-    st.sidebar.header("Filter Options")
+    # Create a sortable numeric column from the question number
+    # This extracts the number before the first '.' in the question string
+    df['Question_Num'] = pd.to_numeric(df['Question'].str.split('.').str[0], errors='coerce')
+    df.dropna(subset=['Question_Num'], inplace=True)
+    df['Question_Num'] = df['Question_Num'].astype(int)
 
-    # Filter by Category using radio buttons
-    categories = sorted(df['Category'].unique())
-    # Add an 'All' option to the list of categories
-    category_options = ["All Categories"] + categories
-    
-    selected_category = st.sidebar.radio(
-        'Filter by Category:',
-        options=category_options,
+    # --- Search Functionality (in main panel) ---
+    search_term = st.text_input(
+        "Search for a specific question or answer:",
+        placeholder="e.g., 'event loop' or 'What is npm?'"
     )
 
-    # Filter the dataframe based on the selected category
-    if selected_category == "All Categories":
-        filtered_df = df
-    else:
-        filtered_df = df[df['Category'] == selected_category]
-
-    # Search functionality
-    search_term = st.sidebar.text_input("Search in Questions or Answers:")
+    filtered_df = df
     if search_term:
-        # Apply search on the already category-filtered dataframe
         # Case-insensitive search
-        filtered_df = filtered_df[
-            filtered_df['Question'].str.contains(search_term, case=False, na=False) |
-            filtered_df['Answer'].str.contains(search_term, case=False, na=False)
+        filtered_df = df[
+            df['Question'].str.contains(search_term, case=False, na=False) |
+            df['Answer'].str.contains(search_term, case=False, na=False)
         ]
 
     # --- Main Panel Display ---
     st.header("Explore the Questions")
-    # Updated the total question count to 500 as requested
     st.write(f"Displaying {len(filtered_df)} of 500 total questions.")
     
     if not filtered_df.empty:
-        # Display the filtered data in a question/answer format
-        for index, row in filtered_df.iterrows():
+        # Sort the filtered dataframe by the extracted question number
+        sorted_df = filtered_df.sort_values(by='Question_Num')
+
+        # Display the filtered and sorted data in a question/answer format
+        for index, row in sorted_df.iterrows():
             st.markdown(f"## {row['Question']}")
             st.markdown(f"**Answer:** {row['Answer']}")
             st.divider() # Adds a visual separator between questions
-        
-        # --- Visualizations ---
-        st.header("Visual Insights")
-        
-        # Bar chart for question count by category (based on the original full dataframe)
-        st.subheader("Total Questions per Category")
-        
-        category_counts = df['Category'].value_counts().reset_index()
-        category_counts.columns = ['Category', 'Count']
-        
-        chart = alt.Chart(category_counts).mark_bar().encode(
-            x=alt.X('Category:N', sort='-y', title="Category"),
-            y=alt.Y('Count:Q', title="Number of Questions"),
-            tooltip=['Category', 'Count']
-        ).interactive()
-        
-        st.altair_chart(chart, use_container_width=True)
-
+    
     else:
-        st.warning("No questions match your current filter or search criteria.")
+        st.warning("No questions match your search criteria.")
 
 except FileNotFoundError:
     st.error("Error: `index.csv` not found.")
