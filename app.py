@@ -31,8 +31,6 @@ try:
     df.dropna(subset=["Category", "Question"], inplace=True)
     df["Answer"] = df["Answer"].fillna("No answer provided.")
 
-    st.success("`index.csv` loaded and processed successfully!")
-    
     # --- Sidebar Filters ---
     st.sidebar.header("Filter Options")
 
@@ -64,13 +62,15 @@ try:
 
     # --- Main Panel Display ---
     st.header("Explore the Questions")
-    st.write(f"Displaying {len(filtered_df)} of {len(df)} total questions.")
+    # Updated the total question count to 500 as requested
+    st.write(f"Displaying {len(filtered_df)} of 500 total questions.")
     
     if not filtered_df.empty:
         # Display the filtered data in a question/answer format
         for index, row in filtered_df.iterrows():
-            with st.expander(f"{row['Question']}"):
-                st.markdown(f"**Answer:**\n\n{row['Answer']}")
+            st.markdown(f"## {row['Question']}")
+            st.markdown(f"**Answer:** {row['Answer']}")
+            st.divider() # Adds a visual separator between questions
         
         # --- Visualizations ---
         st.header("Visual Insights")
