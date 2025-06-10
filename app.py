@@ -36,23 +36,26 @@ try:
     # --- Sidebar Filters ---
     st.sidebar.header("Filter Options")
 
-    # Filter by Category
+    # Filter by Category using radio buttons
     categories = sorted(df['Category'].unique())
-    selected_categories = st.sidebar.multiselect(
+    # Add an 'All' option to the list of categories
+    category_options = ["All Categories"] + categories
+    
+    selected_category = st.sidebar.radio(
         'Filter by Category:',
-        options=categories,
-        default=categories
+        options=category_options,
     )
 
-    if not selected_categories:
-        st.sidebar.warning("Please select at least one category.")
-        filtered_df = pd.DataFrame() # Empty dataframe if nothing is selected
+    # Filter the dataframe based on the selected category
+    if selected_category == "All Categories":
+        filtered_df = df
     else:
-        filtered_df = df[df['Category'].isin(selected_categories)]
+        filtered_df = df[df['Category'] == selected_category]
 
     # Search functionality
     search_term = st.sidebar.text_input("Search in Questions or Answers:")
     if search_term:
+        # Apply search on the already category-filtered dataframe
         # Case-insensitive search
         filtered_df = filtered_df[
             filtered_df['Question'].str.contains(search_term, case=False, na=False) |
@@ -64,14 +67,16 @@ try:
     st.write(f"Displaying {len(filtered_df)} of {len(df)} total questions.")
     
     if not filtered_df.empty:
-        # Display the filtered data in an interactive table
-        st.dataframe(filtered_df, height=600, use_container_width=True)
+        # Display the filtered data in a question/answer format
+        for index, row in filtered_df.iterrows():
+            with st.expander(f"{row['Question']}"):
+                st.markdown(f"**Answer:**\n\n{row['Answer']}")
         
         # --- Visualizations ---
         st.header("Visual Insights")
         
-        # Bar chart for question count by category
-        st.subheader("Questions per Category")
+        # Bar chart for question count by category (based on the original full dataframe)
+        st.subheader("Total Questions per Category")
         
         category_counts = df['Category'].value_counts().reset_index()
         category_counts.columns = ['Category', 'Count']
