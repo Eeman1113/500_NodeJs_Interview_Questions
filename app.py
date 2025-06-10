@@ -17,25 +17,23 @@ Use the search bar below to filter questions and answers.
 
 # --- Main Application Logic ---
 try:
-    # Load the data from the local CSV file
-    # Ensure 'index.csv' is in the same directory as this script.
-    df = pd.read_csv('./index.csv')
+    # Load the data from the local CSV file, assuming no header
+    df = pd.read_csv('./index.csv', header=None)
     
     # --- Data Cleaning and Preparation ---
-    # Rename columns for better readability and to handle potential whitespace issues
-    df.columns = ["Category", "Question", "Answer"]
-    df.columns = df.columns.str.strip()
+    # Assign names to only the columns we need: Question and Answer
+    # This effectively ignores the first 'Category' column
+    df = df.iloc[:, 1:] # Keep only the second and third columns
+    df.columns = ["Question", "Answer"]
     
-    # Handle potential missing values
-    df.dropna(subset=["Category", "Question"], inplace=True)
+    # Handle potential missing answers
     df["Answer"] = df["Answer"].fillna("No answer provided.")
+    df.dropna(subset=["Question"], inplace=True) # Only drop rows if the question itself is empty
 
-    # Create a sortable numeric column from the question number
-    # This extracts the number before the first '.' in the question string
+    # Create a sortable numeric column from the question number.
+    # This is more robust and won't drop rows if a question number is missing.
     df['Question_Num'] = pd.to_numeric(df['Question'].str.split('.').str[0], errors='coerce')
-    df.dropna(subset=['Question_Num'], inplace=True)
-    df['Question_Num'] = df['Question_Num'].astype(int)
-
+    
     # --- Search Functionality (in main panel) ---
     search_term = st.text_input(
         "Search for a specific question or answer:",
@@ -56,6 +54,7 @@ try:
     
     if not filtered_df.empty:
         # Sort the filtered dataframe by the extracted question number
+        # Rows where Question_Num is NaN will be placed last, but not dropped
         sorted_df = filtered_df.sort_values(by='Question_Num')
 
         # Display the filtered and sorted data in a question/answer format
@@ -72,4 +71,4 @@ except FileNotFoundError:
     st.info("Please make sure the `index.csv` file is in the same directory as your Streamlit app (`app.py`).")
 except Exception as e:
     st.error(f"An error occurred while processing the file: {e}")
-    st.warning("Please ensure `index.csv` is a valid CSV with the expected columns: Category, Question, Answer.")
+    st.warning("Please ensure your CSV file is formatted correctly.")
