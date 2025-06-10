@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -24,7 +25,12 @@ try:
     # Assign names to all three columns
     df.columns = ["Category", "Question", "Answer"]
     
-    # FIX: Ensure all data in 'Category' column is treated as a string to prevent sorting errors
+    # FIX: Forward-fill the category to associate it with all questions in a group.
+    # First, replace any blank strings in 'Category' with NaN so ffill works
+    df['Category'].replace('', np.nan, inplace=True)
+    df['Category'].ffill(inplace=True)
+
+    # Ensure all data in 'Category' column is treated as a string to prevent sorting errors
     df['Category'] = df['Category'].astype(str)
     
     # Clean the data by stripping whitespace
